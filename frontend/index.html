@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureRoom — Controle de Acesso</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">🔒</div>
+      <div><h1>SecureRoom</h1><span>Sistema de Controle de Acesso</span></div>
+    </div>
+    <div class="field"><label>Usuário</label><input type="text" id="login-user" value="admin"></div>
+    <div class="field"><label>Senha</label><input type="password" id="login-pass" value="admin123"></div>
+    <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+    <p class="login-hint">Padrão: admin / admin123</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">🔒</div><h2>SecureRoom</h2>
+    </div>
+    <nav>
+      <a class="active" onclick="showTab('cadastro')"><span class="nav-icon">➕</span> Cadastro</a>
+      <a onclick="showTab('colaboradores')"><span class="nav-icon">👥</span> Colaboradores</a>
+      <a onclick="showTab('controle')"><span class="nav-icon">🛡️</span> Controle</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a onclick="fazerLogout()"><span class="nav-icon">🚪</span> Sair</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- CADASTRO -->
+    <div class="page active" id="page-cadastro">
+      <div class="page-header"><h1>Cadastro de colaborador</h1><p>Registre um novo colaborador no sistema</p></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="form-field"><label>Nome completo</label><input type="text" id="f-nome" placeholder="Ex: Ana Silva"></div>
+          <div class="form-field"><label>Matrícula</label><input type="text" id="f-matricula" placeholder="Ex: MAT001"></div>
+          <div class="form-field"><label>Cargo / função</label><input type="text" id="f-cargo" placeholder="Ex: Designer"></div>
+          <div class="form-field"><label>Tag RFID</label><input type="text" id="f-rfid" placeholder="Ex: A1B2C3D4"></div>
+          <div class="form-field">
+            <label>Acesso à sala do projeto</label>
+            <select id="f-acesso"><option value="1">Sim — possui acesso</option><option value="0">Não — sem acesso</option></select>
+          </div>
+          <div class="form-field">
+            <label>Status</label>
+            <select id="f-status"><option value="1">Ativo</option><option value="0">Inativo</option></select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="limparForm()">Limpar</button>
+          <button class="btn btn-accent" onclick="salvarColaborador()">✔ Salvar colaborador</button>
+        </div>
+      </div>
+      <div id="form-feedback" class="feedback" style="display:none"></div>
+    </div>
+
+    <!-- COLABORADORES -->
+    <div class="page" id="page-colaboradores">
+      <div class="page-header"><h1>Colaboradores</h1><p>Gerencie os colaboradores cadastrados</p></div>
+      <div class="btn-row">
+        <input type="text" id="busca" class="search-input" placeholder="🔍  Buscar por nome, matrícula ou cargo..." oninput="renderTabela()">
+        <button class="btn btn-accent" onclick="showTab('cadastro')">+ Novo</button>
+      </div>
+      <div class="card table-card">
+        <table>
+          <thead>
+            <tr><th></th><th>Nome</th><th>Matrícula</th><th>Cargo</th><th>RFID</th><th>Acesso</th><th>Status</th><th>Ações</th></tr>
+          </thead>
+          <tbody id="tabela-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CONTROLE -->
+    <div class="page" id="page-controle">
+      <div class="page-header"><h1>Monitoramento em tempo real</h1><p>Acompanhe entradas, saídas e alertas da sala</p></div>
+      <div class="grid-4" id="stats-row"></div>
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card"><div class="card-title">Eventos recentes</div><div class="event-list" id="event-list"></div></div>
+        <div class="card"><div class="card-title">Dentro da sala agora</div><div class="inside-list" id="inside-list"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Simular leitura de tag RFID</div>
+        <div class="sim-row">
+          <div class="form-field" style="flex:1"><label>Tag RFID</label><input type="text" id="sim-tag" placeholder="Ex: TAG001"></div>
+          <button class="btn btn-accent" onclick="simularLeitura()" style="align-self:flex-end">📡 Simular acesso</button>
+        </div>
+        <div id="sim-result" class="sim-result" style="display:none"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-edit">
+  <div class="modal">
+    <h3>Editar colaborador</h3>
+    <div class="form-grid">
+      <div class="form-field"><label>Nome</label><input type="text" id="e-nome"></div>
+      <div class="form-field"><label>Matrícula</label><input type="text" id="e-matricula"></div>
+      <div class="form-field"><label>Cargo</label><input type="text" id="e-cargo"></div>
+      <div class="form-field"><label>Tag RFID</label><input type="text" id="e-rfid"></div>
+      <div class="form-field"><label>Acesso à sala</label><select id="e-acesso"><option value="1">Sim</option><option value="0">Não</option></select></div>
+      <div class="form-field"><label>Status</label><select id="e-status"><option value="1">Ativo</option><option value="0">Inativo</option></select></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="salvarEdicao()">✔ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
