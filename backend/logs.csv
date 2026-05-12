@@ -1,0 +1,12 @@
+id,colaborador_id,tag,evento,observacao,data_hora
+1,1.0,TAG001,ENTRADA,Entrada autorizada,2026-05-11 20:05:05.216052
+2,1.0,TAG001,SAIDA,Saida registrada,2026-05-11 20:05:05.216052
+3,2.0,TAG002,ENTRADA,Entrada autorizada,2026-05-11 20:05:05.216052
+4,3.0,TAG003,NEGADO,Colaborador sem permissao,2026-05-11 20:05:05.216052
+5,4.0,TAG004,NEGADO,Colaborador sem permissao,2026-05-11 20:05:05.216052
+6,,TAG005,INVASAO,Tentativa de invasao com tag desconhecida,2026-05-11 20:05:05.216052
+7,,TAG006,INVASAO,RFID nao cadastrada,2026-05-11 20:05:05.216052
+8,1.0,TAG001,ENTRADA,Entrada autorizada,2026-05-12 16:13:42.307319
+9,1.0,TAG001,SAIDA,Saida registrada,2026-05-12 16:14:43.909310
+10,1.0,TAG001,ENTRADA,Entrada autorizada,2026-05-12 16:24:50.455731
+11,1.0,TAG001,SAIDA,Saida registrada,2026-05-12 16:25:49.274149
