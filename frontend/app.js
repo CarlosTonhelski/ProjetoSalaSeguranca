@@ -398,10 +398,14 @@ async function salvarColaborador() {
   try {
 
     const response = await fetch(
-      `${BACKEND}/colaboradores`,
+
+      editingId
+        ? `${BACKEND}/colaboradores/${editingId}`
+        : `${BACKEND}/colaboradores`,
+
       {
 
-        method: 'POST',
+        method: editingId ? 'PUT' : 'POST',
 
         headers: {
           'Content-Type': 'application/json'
@@ -417,9 +421,13 @@ async function salvarColaborador() {
 
       toast(data.mensagem, 'ok');
 
+      editingId = null;
+
       limparForm();
 
       carregarColaboradores();
+
+      showTab('colaboradores');
 
     } else {
 
@@ -603,7 +611,7 @@ function renderControle() {
       </div>
 
       <div class="stat-label">
-        TENTATIVAS INVASÃO
+        TENTATIVAS INVASAO
       </div>
 
     </div>
@@ -713,4 +721,84 @@ function adicionarEvento(
 
     ts: nowStr()
   });
+}
+
+// ── EXCLUIR ────────────────────────────────────────────────────
+async function excluir(id) {
+
+  const confirmar = confirm(
+    'Deseja realmente excluir este colaborador?'
+  );
+
+  if (!confirmar) return;
+
+  try {
+
+    const response = await fetch(
+      `${BACKEND}/colaboradores/${id}`,
+      {
+        method: 'DELETE'
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+
+      toast(data.mensagem, 'ok');
+
+      carregarColaboradores();
+
+    } else {
+
+      toast(data.erro, 'err');
+    }
+
+  } catch {
+
+    toast(
+      'Erro ao excluir colaborador',
+      'err'
+    );
+  }
+}
+
+// ── EDITAR ─────────────────────────────────────────────────────
+function abrirModal(id) {
+
+  const colaborador = colaboradores.find(
+    c => c.id === id
+  );
+
+  if (!colaborador) return;
+
+  editingId = id;
+
+  $('f-nome').value = colaborador.nome;
+
+  $('f-matricula').value =
+    colaborador.matricula;
+
+  $('f-cargo').value =
+    colaborador.cargo;
+
+  $('f-rfid').value =
+    colaborador.rfid_tag;
+
+  $('f-acesso').value =
+    colaborador.acesso_permitido
+      ? '1'
+      : '0';
+
+  $('f-status').value =
+    colaborador.ativo
+      ? '1'
+      : '0';
+
+  showTab('cadastro');
+
+  toast(
+    'Modo edição ativado',
+    'ok'
+  );
 }
