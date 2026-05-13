@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import pandas as pd
+from flask_cors import CORS
 
 # FLASK
 app = Flask(__name__)
-
+CORS(app)
 # POSTGRESQL
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     'postgresql://postgres:admin123@localhost:5432/sala_seguranca'
