@@ -299,7 +299,6 @@ document.addEventListener('keydown', e => {
     e.key === 'Enter' &&
     $('login-screen').style.display !== 'none'
   ) {
-
     fazerLogin();
   }
 });
