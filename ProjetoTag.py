@@ -3,7 +3,7 @@ import RPi.GPIO as GPIO
 import requests
 import time
 
-FLASK_URL = 'http://localhost:5000/rfid'  # ← IP DO SEU PC
+FLASK_URL    = 'http://localhost:5000/rfid'
 
 LED_VERDE    = 17
 LED_VERMELHO = 22
@@ -60,17 +60,16 @@ def enviar_tag(tag_id):
         )
         return response.json(), response.status_code
     except requests.exceptions.ConnectionError:
-        print('[ERRO] Nao conseguiu conectar no Flask. Verifique o IP.')
         return None, None
     except requests.exceptions.Timeout:
-        print('[ERRO] Timeout — servidor demorou demais.')
         return None, None
     except Exception as e:
-        print(f'[ERRO] Falha inesperada: {e}')
+        print(f'[ERRO] {e}')
         return None, None
 
 try:
     print('Sistema iniciado. Aproxime a tag...')
+
     while True:
         tag_id, _ = reader.read()
         print(f'\nTag lida: {tag_id}')
@@ -78,7 +77,8 @@ try:
         dados, status = enviar_tag(tag_id)
 
         if dados is None:
-            sinal_vermelho()
+            print('[OFFLINE] Banco indisponivel. Liberando saida manualmente...')
+            sinal_verde()
             time.sleep(2)
             continue
 
@@ -99,5 +99,6 @@ try:
 
 except KeyboardInterrupt:
     print('\nSistema encerrado.')
+
 finally:
     GPIO.cleanup()
