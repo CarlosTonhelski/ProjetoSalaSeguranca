@@ -1,35 +1,23 @@
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
+import requests
 import time
-from datetime import datetime
-import csv
 
-# ================= GPIO =================
-LED_VERDE = 17
+FLASK_URL = 'http://localhost:5000/rfid'  # ← IP DO SEU PC
+
+LED_VERDE    = 17
 LED_VERMELHO = 22
-BUZZER = 3
+BUZZER       = 3
 
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(LED_VERDE, GPIO.OUT)
+GPIO.cleanup()
+GPIO.setup(LED_VERDE,    GPIO.OUT)
 GPIO.setup(LED_VERMELHO, GPIO.OUT)
-GPIO.setup(BUZZER, GPIO.OUT)
+GPIO.setup(BUZZER,       GPIO.OUT)
 
-# ================= RFID =================
 reader = SimpleMFRC522()
 
-# ================= USUÁRIOS =================
-usuarios = {
-    552048006075: {"nome": "Carlos", "autorizado": True},
-    288338938175: {"nome": "João", "autorizado": True},
-    763370409838: {"nome": "Julia", "autorizado": False},
-}
-
-# ================= CONTROLE =================
-presenca = {}
-tentativas_nao_autorizadas = {}
-invasoes = 0
-
-# ================= FUNÇÕES =================
 def buzzer_verde():
     GPIO.output(BUZZER, GPIO.HIGH)
     time.sleep(1)
@@ -42,103 +30,74 @@ def buzzer_vermelho():
         GPIO.output(BUZZER, GPIO.LOW)
         time.sleep(0.2)
 
-def led_verde():
+def sinal_verde():
     GPIO.output(LED_VERDE, GPIO.HIGH)
     buzzer_verde()
-    time.sleep(5)
+    time.sleep(2)
     GPIO.output(LED_VERDE, GPIO.LOW)
 
-def led_vermelho():
+def sinal_vermelho():
     GPIO.output(LED_VERMELHO, GPIO.HIGH)
     buzzer_vermelho()
-    time.sleep(5)
+    time.sleep(2)
     GPIO.output(LED_VERMELHO, GPIO.LOW)
 
-def invasao_alerta():
+def sinal_invasao():
     for _ in range(10):
         GPIO.output(LED_VERMELHO, GPIO.HIGH)
-        GPIO.output(BUZZER, GPIO.HIGH)
-        time.sleep(0.2)
+        GPIO.output(BUZZER,       GPIO.HIGH)
+        time.sleep(0.15)
         GPIO.output(LED_VERMELHO, GPIO.LOW)
-        GPIO.output(BUZZER, GPIO.LOW)
-        time.sleep(0.2)
+        GPIO.output(BUZZER,       GPIO.LOW)
+        time.sleep(0.15)
 
-# ================= LOOP =================
+def enviar_tag(tag_id):
+    try:
+        response = requests.post(
+            FLASK_URL,
+            json={'rfid_tag': str(tag_id)},
+            timeout=5
+        )
+        return response.json(), response.status_code
+    except requests.exceptions.ConnectionError:
+        print('[ERRO] Nao conseguiu conectar no Flask. Verifique o IP.')
+        return None, None
+    except requests.exceptions.Timeout:
+        print('[ERRO] Timeout — servidor demorou demais.')
+        return None, None
+    except Exception as e:
+        print(f'[ERRO] Falha inesperada: {e}')
+        return None, None
+
 try:
-    print("Sistema iniciado...")
-
+    print('Sistema iniciado. Aproxime a tag...')
     while True:
-        id, text = reader.read()
-        agora = datetime.now()
+        tag_id, _ = reader.read()
+        print(f'\nTag lida: {tag_id}')
 
-        print("\nTag:", id)
+        dados, status = enviar_tag(tag_id)
 
-        if id in usuarios:
-            user = usuarios[id]
-            nome = user["nome"]
+        if dados is None:
+            sinal_vermelho()
+            time.sleep(2)
+            continue
 
-            if user["autorizado"]:
+        status_retorno = dados.get('status', '')
+        mensagem       = dados.get('mensagem', '')
+        print(f'Resposta: {status_retorno} — {mensagem}')
 
-                # ENTRADA
-                if nome not in presenca or presenca[nome]["saida"] is not None:
-                    print(f"Bem-vindo, {nome}")
-                    presenca[nome] = {"entrada": agora, "saida": None}
-
-                # SAÍDA
-                else:
-                    print(f"Saída registrada, {nome}")
-                    presenca[nome]["saida"] = agora
-
-                led_verde()
-
-            else:
-                print(f"Você não tem acesso a este projeto, {nome}")
-                tentativas_nao_autorizadas[nome] = tentativas_nao_autorizadas.get(nome, 0) + 1
-                led_vermelho()
-
+        if status_retorno in ('permitido', 'saida'):
+            sinal_verde()
+        elif status_retorno == 'negado':
+            sinal_vermelho()
+        elif status_retorno == 'invasao':
+            sinal_invasao()
         else:
-            print("Identificação não encontrada!")
-            invasoes += 1
-            invasao_alerta()
+            sinal_vermelho()
 
         time.sleep(2)
 
-# ================= FINAL =================
 except KeyboardInterrupt:
-    print("\nEncerrando sistema...\n")
-
-    print("===== RELATÓRIO =====\n")
-
-    with open("relatorio.csv", "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Nome", "Entrada", "Saída", "Tempo (segundos)"])
-
-        for nome, dados in presenca.items():
-            entrada = dados["entrada"]
-            saida = dados["saida"]
-
-            entrada_str = entrada.strftime("%H:%M:%S")
-
-            if saida:
-                saida_str = saida.strftime("%H:%M:%S")
-                tempo = (saida - entrada).total_seconds()
-            else:
-                saida_str = "Ainda na empresa"
-                tempo = 0
-
-            print(f"{nome}: entrou {entrada_str} saiu {saida_str} tempo {tempo:.2f}s")
-
-            writer.writerow([
-                nome,
-                entrada_str,
-                saida_str,
-                round(tempo, 2)
-            ])
-
-    print("\nTentativas de não autorizados:")
-    for nome, qtd in tentativas_nao_autorizadas.items():
-        print(f"{nome}: {qtd} tentativas")
-
-    print(f"\nTotal de tentativas de invasão: {invasoes}")
-
+    print('\nSistema encerrado.')
+finally:
     GPIO.cleanup()
