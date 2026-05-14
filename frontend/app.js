@@ -1,5 +1,5 @@
 // ── BACKEND ───────────────────────────────────────────────────
-const BACKEND = 'http://localhost:5000';
+const BACKEND = 'http://10.1.25.110:5000';
 
 // ── DADOS ──────────────────────────────────────────────────────
 let colaboradores = [];
@@ -396,15 +396,15 @@ async function salvarColaborador() {
   };
 
   try {
-
+    console.log(`${BACKEND}/colaboradores`);
+    
     const response = await fetch(
-
       editingId
         ? `${BACKEND}/colaboradores/${editingId}`
         : `${BACKEND}/colaboradores`,
 
       {
-
+      
         method: editingId ? 'PUT' : 'POST',
 
         headers: {
@@ -414,11 +414,11 @@ async function salvarColaborador() {
         body: JSON.stringify(colaborador)
       }
     );
-
+    console.log("teste");
     const data = await response.json();
-
+    console.log(data);
     if (response.ok) {
-
+      console.log("entrou");
       toast(data.mensagem, 'ok');
 
       editingId = null;
@@ -430,12 +430,12 @@ async function salvarColaborador() {
       showTab('colaboradores');
 
     } else {
-
+      console.log("nao entrou");
       toast(data.erro, 'err');
     }
 
   } catch {
-
+    console.log("deu erro");
     toast(
       'Erro ao conectar no backend',
       'err'
